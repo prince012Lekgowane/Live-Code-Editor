@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Code Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+        }
+
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .editor-section {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor {
+            flex: 1;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            resize: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            line-height: 1.6;
+        }
+
+        .preview {
+            flex: 1;
+            background: white;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Live Code Editor</h1>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('html')">HTML</button>
+                <button class="tab" onclick="showTab('css')">CSS</button>
+                <button class="tab" onclick="showTab('js')">JavaScript</button>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <div class="editor-section">
+                <div class="editor-header">
+                    <span id="editorTitle">HTML Editor</span>
+                    <div class="controls">
+                        <button class="btn" onclick="runCode()">▶ Run</button>
+                        <button class="btn" onclick="clearEditor()">🗑️ Clear</button>
+                        <button class="btn" onclick="downloadCode()">⬇ Download</button>
+                    </div>
+                </div>
+                <textarea id="htmlEditor" class="editor" placeholder="Enter HTML code..."><!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Hello World!</h1>
+    <p>Start coding something amazing!</p>
+</body>
+</html></textarea>
+                <textarea id="cssEditor" class="editor" style="display: none;" placeholder="Enter CSS code...">body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}</textarea>
+                <textarea id="jsEditor" class="editor" style="display: none;" placeholder="Enter JavaScript code...">// Add your JavaScript code here
+console.log('Hello from the Live Code Editor!');
+
+// Example: Add interactivity
+document.addEventListener('DOMContentLoaded', function() {
+    const h1 = document.querySelector('h1');
+    if (h1) {
+        h1.addEventListener('click', function() {
+            this.style.color = '#FFD700';
+        });
+    }
+});</textarea>
+            </div>
+
+            <div class="editor-section">
+                <div class="editor-header">
+                    <span>Live Preview</span>
+                    <div class="controls">
+                        <button class="btn" onclick="refreshPreview()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <iframe id="preview" class="preview"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'html';
+
+        function showTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('htmlEditor').style.display = 'none';
+            document.getElementById('cssEditor').style.display = 'none';
+            document.getElementById('jsEditor').style.display = 'none';
+
+            const titles = {
+                html: 'HTML Editor',
+                css: 'CSS Editor',
+                js: 'JavaScript Editor'
+            };
+
+            document.getElementById('editorTitle').textContent = titles[tab];
+            document.getElementById(tab + 'Editor').style.display = 'block';
+        }
+
+        function runCode() {
+            const html = document.getElementById('htmlEditor').value;
+            const css = document.getElementById('cssEditor').value;
+            const js = document.getElementById('jsEditor').value;
+
+            const iframe = document.getElementById('preview');
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+            const fullCode = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>${css}</style>
+                </head>
+                <body>
+                    ${html}
+                    <script>${js}<\/script>
+                </body>
+                </html>
+            `;
+
+            doc.open();
+            doc.write(fullCode);
+            doc.close();
+        }
+
+        function clearEditor() {
+            const editor = document.getElementById(currentTab + 'Editor');
+            if (confirm('Are you sure you want to clear this editor?')) {
+                editor.value = '';
+            }
+        }
+
+        function refreshPreview() {
+            runCode();
+        }
+
+        function downloadCode() {
+            const html = document.getElementById('htmlEditor').value;
+            const css = document.getElementById('cssEditor').value;
+            const js = document.getElementById('jsEditor').value;
+
+            const fullCode = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+${css}
+    </style>
+</head>
+<body>
+${html}
+    <script>
+${js}
+    <\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([fullCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'code.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-run on load
+        runCode();
+
+        // Auto-run on input with debounce
+        let timeout;
+        document.querySelectorAll('.editor').forEach(editor => {
+            editor.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(runCode, 500);
+            });
+        });
+    </script>
+</body>
+</html>
